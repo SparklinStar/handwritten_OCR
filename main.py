@@ -19,7 +19,81 @@ from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
 import tensorflow as tf
 model = tf.keras.models.load_model("encoding_error.h5")
 model.summary()
-LB = LabelBinarizer()
+
+
+dir = "handwritten-characters/Train/"
+train_data = []
+img_size = 32
+non_chars = ["#","$","&","@"]
+for i in os.listdir(dir):
+    if i in non_chars:
+        continue
+    count = 0
+    sub_directory = os.path.join(dir,i)
+    for j in os.listdir(sub_directory):
+        count+=1
+        if count > 4000:
+            break
+        img = cv2.imread(os.path.join(sub_directory,j),0)
+        img = cv2.resize(img,(img_size,img_size))
+        train_data.append([img,i])
+
+        len(train_data)
+
+        val_dir = "handwritten-characters/Validation/"
+        val_data = []
+        img_size = 32
+        for i in os.listdir(val_dir):
+            if i in non_chars:
+                continue
+            count = 0
+            sub_directory = os.path.join(val_dir, i)
+            for j in os.listdir(sub_directory):
+                count += 1
+                if count > 1000:
+                    break
+                img = cv2.imread(os.path.join(sub_directory, j), 0)
+                img = cv2.resize(img, (img_size, img_size))
+                val_data.append([img, i])
+
+                len(val_data)
+
+                random.shuffle(train_data)
+                random.shuffle(val_data)
+
+                train_X = []
+                train_Y = []
+                for features, label in train_data:
+                    train_X.append(features)
+                    train_Y.append(label)
+
+                    val_X = []
+                    val_Y = []
+                    for features, label in val_data:
+                        val_X.append(features)
+                        val_Y.append(label)
+
+                        LB = LabelBinarizer()
+                        train_Y = LB.fit_transform(train_Y)
+                        val_Y = LB.fit_transform(val_Y)
+
+                train_X = np.array(train_X) / 255.0
+                train_X = train_X.reshape(-1, 32, 32, 1)
+                train_Y = np.array(train_Y)
+
+                val_X = np.array(val_X) / 255.0
+                val_X = val_X.reshape(-1, 32, 32, 1)
+                val_Y = np.array(val_Y)
+                print(train_X.shape, val_X.shape)
+                print(train_Y.shape, val_Y.shape)
+
+
+
+
+
+
+
+
 
 
 def sort_contours(cnts, method="left-to-right"):
@@ -58,7 +132,7 @@ def get_letters(img):
         thresh = np.expand_dims(thresh, axis=-1)
         thresh = thresh.reshape(1,32,32,1)
         ypred = model.predict(thresh)
-        ypred = LB.inverse_transform(ypred)
+        ypred = LB.fit_transform(ypred)
         [x] = ypred
         letters.append(x)
     return letters, image
@@ -73,3 +147,4 @@ letter,image = get_letters("imageonline-monochrome-6556763.jpg")
 word = get_word(letter)
 print(word)
 plt.imshow(image)
+
